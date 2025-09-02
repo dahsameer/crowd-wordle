@@ -10,6 +10,7 @@
     },
     refetchInterval: 10 * 60 * 1000,
     retry: 2,
+	refetchOnWindowFocus: false,
     retryDelay: (attemptIndex) => Math.min(2000 * 2 ** attemptIndex, 30000),
   });
 </script>
