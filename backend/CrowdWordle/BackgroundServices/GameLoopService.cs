@@ -1,4 +1,5 @@
 ﻿using CrowdWordle.Services;
+using CrowdWordle.Shared;
 
 namespace CrowdWordle.BackgroundServices;
 
@@ -6,7 +7,8 @@ public sealed class GameLoopService(
     GameEngine gameEngine,
     VotingService votingService,
     ConnectionManager connectionManager,
-    VoteStreamingService voteStreamingService) : BackgroundService
+    VoteStreamingService voteStreamingService,
+    IServiceScopeFactory serviceScopeFactory) : BackgroundService
 {
     private static readonly TimeSpan TICK_INTERVAL = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan BROADCAST_INTERVAL = TimeSpan.FromSeconds(1);
@@ -41,7 +43,7 @@ public sealed class GameLoopService(
             if (votingEndTime.HasValue && now >= votingEndTime.Value)
             {
                 voteStreamingService.ClearAll();
-                HandleVotingTimeout();
+                await HandleVotingTimeout();
                 continue;
             }
 
@@ -71,7 +73,7 @@ public sealed class GameLoopService(
         _ = connectionManager.BroadcastAsync(message.AsMemory());
     }
 
-    private void HandleVotingTimeout()
+    private async Task HandleVotingTimeout()
     {
         var totalVotes = votingService.GetTotalVotes();
         if (totalVotes == 0)
@@ -88,6 +90,13 @@ public sealed class GameLoopService(
             votingService.EndVoting();
 
         var game = gameEngine.GetCurrentGame();
+        if (!clearVotes)
+        {
+
+            var userCount = connectionManager.GetConnectionCount();
+            await RecordGame(game, userCount);
+        }
+
         var timeToNextGame = gameEngine.GetNextEventTime();
         var message = EncodingHelper.PackGameUpdate(in game, timeToNextGame);
 
@@ -135,5 +144,36 @@ public sealed class GameLoopService(
         }
 
         return true;
+    }
+
+    private async Task RecordGame(Game game, uint userCount)
+    {
+        const string sql = @"
+                INSERT INTO GameRecords (
+                    StartedTime, SelectedWord, Round, 
+                    PlayedWord1, PlayedWord2, PlayedWord3, PlayedWord4, PlayedWord5, PlayedWord6,
+                    Won, EndedTime, TotalUsers
+                ) VALUES (
+                    @startedTime, @selectedWord, @round,
+                    @word1, @word2, @word3, @word4, @word5, @word6,
+                    @won, @endedTime, @totalUsers
+                );";
+
+        using var scope = serviceScopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetService<DbService>()!;
+        await db.ExecuteNonQueryAsync(sql,
+            ("startedTime", game.StartedTime.ToString("O")),
+            ("selectedWord", game.SelectedWord),
+            ("round", game.Round),
+            ("word1", game.Word0.Packed),
+            ("word2", game.Word1.Packed),
+            ("word3", game.Word2.Packed),
+            ("word4", game.Word3.Packed),
+            ("word5", game.Word4.Packed),
+            ("word6", game.Word5.Packed),
+            ("won", game.State == GameState.Won),
+            ("endedTime", DateTime.UtcNow.ToString("O")),
+            ("totalUsers", userCount)
+            );
     }
 }

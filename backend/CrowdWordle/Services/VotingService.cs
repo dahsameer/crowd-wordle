@@ -36,6 +36,7 @@ public sealed class VotingService(IOptions<GameConfiguration> config, WordServic
             if (!_votingActive && game.State == GameState.WaitingForVote)
             {
                 game.State = GameState.VotingInProgress;
+                game.StartedTime = DateTime.UtcNow;
                 _votingActive = true;
                 _votingEndTime = DateTime.UtcNow.Add(_config.VotingDuration);
                 first = true;

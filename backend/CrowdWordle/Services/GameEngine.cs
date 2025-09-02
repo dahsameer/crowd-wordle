@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Options;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace CrowdWordle.Services;
@@ -28,7 +27,7 @@ public sealed class GameEngine
         lock (_gameLock)
         {
             if (_currentGame.GameOver)
-                return false;
+                return true;
 
             var states = ProcessWord(topWord, _currentGame.SelectedWord);
             var packedStates = PackStates(states);
@@ -66,7 +65,7 @@ public sealed class GameEngine
         _nextEventTime = null;
     }
 
-    
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsGameOver() => _currentGame.GameOver;
@@ -86,7 +85,7 @@ public sealed class GameEngine
         {
             State = GameState.WaitingForVote,
             SelectedWord = _wordService.GetNextWord(),
-            Round = 0
+            Round = 0,
         };
     }
 

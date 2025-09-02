@@ -14,6 +14,7 @@ public struct Game
     public GameState State;
     public uint SelectedWord;
     public byte Round;
+    public DateTime StartedTime;
 
     public readonly bool GameOver => State is GameState.Won or GameState.Lost;
 

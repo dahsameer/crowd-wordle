@@ -1,27 +1,17 @@
 ﻿CREATE TABLE IF NOT EXISTS GameRecords (
     Id INTEGER PRIMARY KEY,
-    EndedTime TEXT NOT NULL,
+    StartedTime TEXT NOT NULL,
     SelectedWord INTEGER NOT NULL,
     Round INTEGER NOT NULL,
+    PlayedWord1 INTEGER NOT NULL,
+    PlayedWord2 INTEGER NOT NULL,
+    PlayedWord3 INTEGER NOT NULL,
+    PlayedWord4 INTEGER NOT NULL,
+    PlayedWord5 INTEGER NOT NULL,
+    PlayedWord6 INTEGER NOT NULL,
     Won INTEGER NOT NULL,
+    EndedTime TEXT NOT NULL,
     TotalUsers INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS RoundRecords (
-    GameId INTEGER NOT NULL,
-    Round INTEGER NOT NULL,
-    PlayedWord INTEGER NOT NULL,
-    TotalVotes INTEGER NOT NULL,
-    PRIMARY KEY (GameId, Round)
-);
-
-CREATE TABLE IF NOT EXISTS VoteRecords (
-    GameId INTEGER NOT NULL,
-    Round INTEGER NOT NULL,
-    VoteIndex INTEGER NOT NULL,
-    VotedWord INTEGER NOT NULL,
-    Votes INTEGER NOT NULL,
-    PRIMARY KEY (GameId, Round, VoteIndex)
 );
 
 CREATE TABLE IF NOT EXISTS SystemRecords (
