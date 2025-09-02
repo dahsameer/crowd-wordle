@@ -100,7 +100,7 @@ api.MapGet("/status", (ConnectionManager connectionManager, GameEngine gameEngin
 
 api.MapGet("/health", () => Results.Ok("Healthy"));
 
-app.Map("/ws", async (HttpContext context, ConnectionManager connectionManager,
+api.Map("/ws", async (HttpContext context, ConnectionManager connectionManager,
     TokenService tokenService, GameEngine gameEngine) =>
 {
     if (!context.WebSockets.IsWebSocketRequest)
