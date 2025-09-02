@@ -24,7 +24,7 @@ public static class MigrationRunner
             applied.Add(reader.GetString(0));
         }
 
-        var migrationFiles = Directory.GetFiles("Data/Migrations", "*.sql")
+        var migrationFiles = Directory.GetFiles("Migrations", "*.sql")
             .OrderBy(f => f);
 
         foreach (var file in migrationFiles)
