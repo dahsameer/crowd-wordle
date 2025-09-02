@@ -14,10 +14,9 @@ public sealed class TokenService
     private readonly SymmetricSecurityKey _signingKey;
     private readonly JwtSecurityTokenHandler _tokenHandler;
     private readonly TokenValidationParameters _validationParameters;
-    private readonly Lock _lock = new();
     private ulong _userCounter;
 
-    public TokenService(IOptions<TokenConfiguration> config, ulong initialUserCounter = 0)
+    public TokenService(IOptions<TokenConfiguration> config, SystemStatus systemSetting)
     {
         _config = config.Value;
         _tokenHandler = new JwtSecurityTokenHandler();
@@ -34,35 +33,32 @@ public sealed class TokenService
             IssuerSigningKey = _signingKey,
             ClockSkew = TimeSpan.Zero
         };
-        _userCounter = initialUserCounter;
+        _userCounter = systemSetting.UserIdIndex;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (string token, ulong id) GenerateToken()
     {
-        lock (_lock)
-        {
-            var userId = Interlocked.Increment(ref _userCounter);
-            var now = DateTime.UtcNow;
+        Interlocked.Increment(ref _userCounter);
+        var userId = _userCounter;
+        var now = DateTime.UtcNow;
 
-            var claims = new[]
-            {
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(JwtRegisteredClaimNames.Iat, new DateTimeOffset(now).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+        var claims = new[]
+        {
+            new Claim("i", userId.ToString())
         };
 
-            var credentials = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
+        var credentials = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
 
-            var token = new JwtSecurityToken(
-                issuer: _config.Issuer,
-                audience: _config.Audience,
-                claims: claims,
-                expires: now.AddYears(100),
-                signingCredentials: credentials
-            );
+        var token = new JwtSecurityToken(
+            issuer: _config.Issuer,
+            audience: _config.Audience,
+            claims: claims,
+            expires: now.AddYears(100),
+            signingCredentials: credentials
+        );
 
-            return (_tokenHandler.WriteToken(token), userId);
-        }
+        return (_tokenHandler.WriteToken(token), userId);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -84,7 +80,7 @@ public sealed class TokenService
         try
         {
             var claimsPrincipal = _tokenHandler.ValidateToken(token, _validationParameters, out _);
-            var userIdClaim = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userIdClaim = claimsPrincipal.FindFirstValue("i");
 
             return uint.TryParse(userIdClaim, out var userId) ? userId : 0u;
         }

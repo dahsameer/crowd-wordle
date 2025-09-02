@@ -13,3 +13,10 @@ public sealed class TokenConfiguration
     public string Issuer { get; set; } = "CrowdWordle";
     public string Audience { get; set; } = "CrowdWordle.Client";
 }
+
+public sealed class SystemStatus
+{
+    public ulong UserIdIndex { get; set; } = 0;
+    public uint CurrentUserCount { get; set; } = 0;
+    public ulong HighestUserCount { get; set; } = 0;
+}

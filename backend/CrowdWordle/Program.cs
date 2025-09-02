@@ -1,8 +1,8 @@
 using CrowdWordle;
 using CrowdWordle.BackgroundServices;
+using CrowdWordle.Data;
 using CrowdWordle.Services;
 using CrowdWordle.Shared;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 var dbconn = builder.Configuration["WordleDbConnection"]!;
@@ -11,6 +11,25 @@ Console.WriteLine($"Connection String used: {connectionstring}");
 builder.Services.AddScoped(_ =>
     new DbService(connectionstring));
 
+builder.Services.AddSingleton<SystemStatus>(sp =>
+{
+    using var scope = sp.CreateScope();
+    using var db = scope.ServiceProvider.GetRequiredService<DbService>();
+
+    var systemRecord = db.QuerySingle(
+        "SELECT UserIdIndex, HighestUserCount  FROM SystemRecords",
+        reader => new SystemRecord(
+            (ulong)reader.GetInt64(0),
+            (ulong)reader.GetInt64(1)
+        )
+    );
+    return new SystemStatus
+    {
+        UserIdIndex = systemRecord?.UserIdIndex ?? 0UL,
+        HighestUserCount = systemRecord?.HighestUserCount ?? 0UL,
+    };
+});
+
 builder.Services.Configure<GameConfiguration>(builder.Configuration.GetSection("Game"));
 builder.Services.Configure<TokenConfiguration>(builder.Configuration.GetSection("Token"));
 
@@ -18,17 +37,7 @@ builder.Services.AddSingleton<ConnectionManager>();
 builder.Services.AddSingleton<GameEngine>();
 builder.Services.AddSingleton<WordService>();
 builder.Services.AddSingleton<VotingService>();
-builder.Services.AddSingleton(sp =>
-{
-    var config = sp.GetRequiredService<IOptions<TokenConfiguration>>();
-
-    using var scope = sp.CreateScope();
-    using var db = scope.ServiceProvider.GetRequiredService<DbService>();
-
-    var initialCounter = (ulong)db.QuerySingle("SELECT UserIdIndex FROM SystemRecords LIMIT 1", reader => reader.GetInt64(0));
-
-    return new TokenService(config, initialCounter);
-});
+builder.Services.AddSingleton<TokenService>();
 
 builder.Services.AddHostedService<GameLoopService>();
 builder.Services.AddHostedService<ConnectionCleanupService>();
@@ -91,7 +100,7 @@ api.MapGet("/tagline", (WordService service) =>
     return Results.Text(service.GetTagLine(), "text/plain");
 });
 
-api.MapGet("/status", (ConnectionManager connectionManager, GameEngine gameEngine) =>
+api.MapGet("/status", (SystemStatus system, ConnectionManager connectionManager, GameEngine gameEngine) =>
 {
     var game = gameEngine.GetCurrentGame();
     var status = new Status(connectionManager.GetConnectionCount(), game.State.ToString(), game.Round);

@@ -1,13 +1,15 @@
-﻿using System.Buffers.Binary;
+﻿using CrowdWordle.Shared;
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 
 namespace CrowdWordle.Services;
 
-public sealed class ConnectionManager(VotingService votingService)
+public sealed class ConnectionManager(VotingService votingService, IServiceScopeFactory serviceScopeFactory, SystemStatus systemSetting)
 {
     private readonly ConcurrentDictionary<uint, WebSocketConnection> _connections = [];
+    private uint CurrentUserCount = 0;
 
     public async Task HandleConnectionAsync(uint userId, WebSocket webSocket, GameEngine gameEngine)
     {
@@ -21,6 +23,13 @@ public sealed class ConnectionManager(VotingService votingService)
 
         try
         {
+            Interlocked.Increment(ref CurrentUserCount);
+            systemSetting.CurrentUserCount = CurrentUserCount;
+            if(CurrentUserCount > systemSetting.HighestUserCount)
+            {
+                systemSetting.HighestUserCount = CurrentUserCount;
+                await RecordHighestUserCount();
+            }
             SendInitialState(userId, gameEngine);
             await HandleClientMessages(connection, gameEngine);
         }
@@ -115,8 +124,17 @@ public sealed class ConnectionManager(VotingService votingService)
 
     public async Task CloseConnection(uint userId, WebSocketConnection connection)
     {
+        Interlocked.Decrement(ref CurrentUserCount);
+        systemSetting.CurrentUserCount = CurrentUserCount;
         _connections.TryRemove(userId, out _);
         await connection.CloseAsync();
+    }
+
+    private async Task RecordHighestUserCount()
+    {
+        using var scope = serviceScopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetService<DbService>()!;
+        await db.ExecuteNonQueryAsync("UPDATE SystemRecords SET HighestUserCount = @userCount", ("@userCount", systemSetting.HighestUserCount));
     }
 }
 
