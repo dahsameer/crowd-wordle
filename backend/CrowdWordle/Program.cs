@@ -5,9 +5,10 @@ using CrowdWordle.Services;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateSlimBuilder(args);
-
+var connectionstring = builder.Configuration["WordleDbConnection"]!;
+Console.WriteLine($"Connection String used: {connectionstring}");
 builder.Services.AddScoped(_ =>
-    new DbService(builder.Configuration["WordleDbConnection"]!));
+    new DbService(connectionstring));
 
 builder.Services.Configure<GameConfiguration>(builder.Configuration.GetSection("Game"));
 builder.Services.Configure<TokenConfiguration>(builder.Configuration.GetSection("Token"));
