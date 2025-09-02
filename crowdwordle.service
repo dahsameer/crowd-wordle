@@ -17,7 +17,8 @@ RestartSec=5
 
 # Environment
 Environment=DOTNET_EnableDiagnostics=0
-Environment=DOTNET_gcServer=1
+Environment=WordleDbConnection=/var/lib/crowdwordle/game.db
+Environment=Token__SecretKey=crowd-wordle-wow-2025-UAT_o3uj4it90283uf
 
 # Security Hardening
 NoNewPrivileges=true
