@@ -13,4 +13,11 @@
         <ProjectReference Include="..\CrowdWordle.Shared\CrowdWordle.Shared.csproj" />
     </ItemGroup>
 
+
+    <ItemGroup>
+        <None Include="Migrations\**\*.*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 </Project>

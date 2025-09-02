@@ -24,8 +24,13 @@ public static class MigrationRunner
             applied.Add(reader.GetString(0));
         }
 
-        var migrationFiles = Directory.GetFiles("Migrations", "*.sql")
-            .OrderBy(f => f);
+        var appDir = AppContext.BaseDirectory;
+        var migrationsDir = Path.Combine(appDir, "Migrations");
+
+        var migrationFiles = Directory
+            .GetFiles(migrationsDir, "*.sql")
+            .OrderBy(f => f)
+            .ToList();
 
         foreach (var file in migrationFiles)
         {
