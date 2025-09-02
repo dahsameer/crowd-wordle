@@ -1,11 +1,12 @@
 using CrowdWordle;
 using CrowdWordle.BackgroundServices;
-using CrowdWordle.Data;
 using CrowdWordle.Services;
+using CrowdWordle.Shared;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateSlimBuilder(args);
-var connectionstring = builder.Configuration["WordleDbConnection"]!;
+var dbconn = builder.Configuration["WordleDbConnection"]!;
+var connectionstring = $"Data Source={dbconn};Cache=Shared;";
 Console.WriteLine($"Connection String used: {connectionstring}");
 builder.Services.AddScoped(_ =>
     new DbService(connectionstring));
@@ -57,12 +58,6 @@ if (builder.Environment.IsDevelopment())
 }
 
 var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<DbService>();
-    MigrationRunner.RunMigrations(db);
-}
 
 if (app.Environment.IsDevelopment())
 {

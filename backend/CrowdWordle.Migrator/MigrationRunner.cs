@@ -1,4 +1,6 @@
-﻿namespace CrowdWordle.Data;
+﻿using CrowdWordle.Shared;
+
+namespace CrowdWordle.Migrator;
 public static class MigrationRunner
 {
     public static void RunMigrations(DbService db)
@@ -22,7 +24,7 @@ public static class MigrationRunner
             applied.Add(reader.GetString(0));
         }
 
-        var migrationFiles = Directory.GetFiles("Data\\Migrations", "*.sql")
+        var migrationFiles = Directory.GetFiles("Data/Migrations", "*.sql")
             .OrderBy(f => f);
 
         foreach (var file in migrationFiles)

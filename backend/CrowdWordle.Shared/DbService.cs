@@ -1,5 +1,7 @@
-﻿namespace CrowdWordle.Data;
-using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.Sqlite;
+
+namespace CrowdWordle.Shared;
+
 public sealed class DbService : IDisposable
 {
     private readonly SqliteConnection _connection;
