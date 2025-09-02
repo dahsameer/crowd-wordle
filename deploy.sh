@@ -34,20 +34,23 @@ deploy_backend() {
   echo "🚀 Deploying backend..."
   pushd backend > /dev/null
 
+  echo "🔹 Building web API (CrowdWordle) native AOT..."
+  dotnet publish CrowdWordle/CrowdWordle.csproj -c Release -p:PublishAot=true -o publish/web
+
+  echo "🔹 Running database migrations (CrowdWordle.Migrator)..."
+  dotnet run --project CrowdWordle.Migrator --configuration Release
+
   echo "🔹 Stopping service: $SERVICE_NAME"
   sudo systemctl stop "$SERVICE_NAME" || true
 
-  echo "🔹 Building backend (Native AOT)..."
-  dotnet publish CrowdWordle/CrowdWordle.csproj -c Release -p:PublishAot=true -o publish
-
-  echo "🔹 Deploying to $BACKEND_DIR..."
+  echo "🔹 Deploying web API to $BACKEND_DIR..."
   sudo mkdir -p "$BACKEND_DIR"
   sudo rm -rf "$BACKEND_DIR/*"
-  sudo cp -r publish/* "$BACKEND_DIR/"
+  sudo cp -r publish/web/* "$BACKEND_DIR/"
 
   echo "🔹 Restarting service: $SERVICE_NAME"
   sudo systemctl start "$SERVICE_NAME"
-  
+
   popd > /dev/null
   echo "✅ Backend deployed!"
 }
