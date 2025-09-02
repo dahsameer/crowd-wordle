@@ -1,0 +1,29 @@
+[Unit]
+Description=CrowdWordle Backend Service
+After=network.target
+
+[Service]
+# Adjust user/group if needed
+User=www-data
+Group=www-data
+
+# Path to your published AOT binary
+WorkingDirectory=/var/www/crowdwordle/backend
+ExecStart=/var/www/crowdwordle/backend/CrowdWordle
+
+# Ensure the service restarts automatically if it fails
+Restart=always
+RestartSec=5
+
+# Environment
+Environment=DOTNET_EnableDiagnostics=0
+Environment=DOTNET_gcServer=1
+
+# Security Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
