@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 var builder = WebApplication.CreateSlimBuilder(args);
 
 builder.Services.AddScoped(_ =>
-    new DbService("Data Source=game.db;Cache=Shared;"));
+    new DbService(builder.Configuration["WordleDbConnection"]!));
 
 builder.Services.Configure<GameConfiguration>(builder.Configuration.GetSection("Game"));
 builder.Services.Configure<TokenConfiguration>(builder.Configuration.GetSection("Token"));
