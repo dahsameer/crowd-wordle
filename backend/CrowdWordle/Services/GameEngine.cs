@@ -28,9 +28,9 @@ public sealed class GameEngine
         {
             if (_currentGame.GameOver)
                 return true;
-            var packedStates = ProcessWordExperimental(topWord, _currentGame.SelectedWord);
-            //var states = ProcessWord(topWord, _currentGame.SelectedWord);
-            //var packedStates = PackStates(states);
+            //var packedStates = ProcessWordExperimental(topWord, _currentGame.SelectedWord);
+            var states = ProcessWord(topWord, _currentGame.SelectedWord);
+            var packedStates = EncodingHelper.PackStates(states);
             var playedWord = new PlayedWord
             {
                 Packed = topWord,
