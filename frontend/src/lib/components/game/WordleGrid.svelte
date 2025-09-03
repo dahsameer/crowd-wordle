@@ -1,7 +1,6 @@
 <script lang="ts">
   import { getGame } from "../../game/game.svelte";
   import { BlockState, GameState, type Game } from "../../game/game.types";
-  import { IsGameOver } from "../../shared/utils";
   import Countdown from "./Countdown.svelte";
 
   let game: Game = $derived(getGame());
@@ -36,7 +35,7 @@
 </script>
 
 <div
-  class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl"
+  class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl"
 >
   <div class="grid grid-rows-6 gap-2 w-fit mx-auto">
     {#each Array(6) as _, rowIndex}
@@ -63,7 +62,8 @@
       <p class="text-green-300 mt-1">
         The crowd guessed it in {game.Round} tries!
       </p>
-      <p class="text-green-300 mt -1">Next game in: 
+      <p class="text-green-300 mt -1">
+        Next game in:
         <Countdown
           targetDate={new Date(Date.now() + game.TimeToNextGame * 1000)}
           positive={true}
@@ -80,7 +80,8 @@
       <p class="text-red-300 mt-1">
         The word was: <span class="font-bold">{game.SelectedWord}</span>
       </p>
-      <p class="text-red-300 mt -1">Next game in: 
+      <p class="text-red-300 mt -1">
+        Next game in:
         <Countdown
           targetDate={new Date(Date.now() + game.TimeToNextGame * 1000)}
           positive={true}
@@ -90,7 +91,6 @@
       </p>
     </div>
   {/if}
-  
 </div>
 
 <style>

@@ -45,8 +45,8 @@
   }
 </script>
 
-<main class="min-h-screen bg-black text-white">
-  <header class="container mx-auto px-4 py-6">
+<main class="min-h-[100svh] bg-black text-white flex flex-col">
+  <header class="container mx-auto px-4 py-3">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-4">
         <h1
@@ -87,7 +87,7 @@
 
   <StatusBar />
 
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div class="lg:col-span-2 space-y-8">
         <div class="flex justify-center">

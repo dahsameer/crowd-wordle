@@ -1,10 +1,12 @@
 <script lang="ts">
   import { getGame, getLiveData, setLiveData } from "../../game/game.svelte";
-  import { SubmitState } from "../../game/game.types";
+  import { BlockState, SubmitState } from "../../game/game.types";
   import { showError } from "../../shared/toast.svelte";
   import { IsGameOver } from "../../shared/utils";
 
   const { submit } = $props();
+
+  type LetterStatus = "absent" | "present" | "correct" | "default";
 
   let game = $derived(getGame());
   let liveData = $derived(getLiveData());
@@ -82,39 +84,63 @@
     const target = event.target as HTMLInputElement;
     inputValue = target.value.toUpperCase().slice(0, 5);
   }
+
+  let letterMap: Record<string, LetterStatus> = $derived.by(() => {
+    const newMap: Record<string, LetterStatus> = {};
+    const statusRank: Record<LetterStatus, number> = {
+      default: 0,
+      absent: 1,
+      present: 2,
+      correct: 3,
+    };
+
+    for (const row of game.Board) {
+      for (let i = 0; i < row.Letters.length; i++) {
+        const char = row.Letters[i].toUpperCase();
+        const state = row.state[i];
+        let status: LetterStatus = "default";
+
+        if (state === BlockState.Absent) status = "absent";
+        else if (state === BlockState.Present) status = "present";
+        else if (state === BlockState.Correct) status = "correct";
+
+        if (!newMap[char] || statusRank[status] > statusRank[newMap[char]]) {
+          newMap[char] = status;
+        }
+      }
+    }
+    return newMap;
+  });
+
+  const keyboardLayout = [
+    ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+    ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+    ["Z", "X", "C", "V", "B", "N", "M"],
+  ];
+
+  function getLetterStatus(letter: string): LetterStatus {
+    return letterMap[letter.toUpperCase()] ?? "default";
+  }
+
+  // --- End of logic from the second component ---
 </script>
 
 <div
-  class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl"
+  class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl"
 >
-  <div class="text-center mb-6">
-    <h2 class="text-2xl font-bold text-white mb-2">
-      {hasAlreadyVoted ? "Your Word Suggestion" : "Suggest the Next Word"}
-    </h2>
-    <p class="text-gray-300 text-sm">
-      {hasAlreadyVoted
-        ? "You've already submitted a suggestion for this round"
-        : "Enter a 5-letter word for the community vote"}
-    </p>
-  </div>
-
   {#if hasAlreadyVoted}
     <div class="mb-6 p-4 bg-green-500/20 border border-green-500/30 rounded-xl">
       <div class="flex items-center justify-center gap-3">
-        <div class="w-2 h-2 bg-green-400 rounded-full"></div>
         <p class="text-green-300 font-medium">
           Your suggestion: <span
             class="text-white font-bold text-lg tracking-wider"
             >{liveData.myVote}</span
           >
         </p>
-        <div class="w-2 h-2 bg-green-400 rounded-full"></div>
       </div>
     </div>
-  {/if}
-
-  {#if !hasAlreadyVoted}
-    <div class="flex flex-col sm:flex-row gap-4">
+  {:else}
+    <div class="flex flex-col sm:flex-row gap-4 m-6">
       <div class="flex-1">
         <input
           bind:this={inputElement}
@@ -160,17 +186,29 @@
         {/if}
       </button>
     </div>
-
-    <div class="mt-4 text-center">
-      <p class="text-gray-400 text-xs">
-        Your suggestion will be added to the community vote
-      </p>
-    </div>
-  {:else}
-    <div class="text-center">
-      <p class="text-gray-400 text-sm">
-        Wait for the current round to finish before suggesting again
-      </p>
-    </div>
   {/if}
+
+  <div
+    class="w-full flex flex-col items-center gap-2 mx-auto pb-4 select-none opacity-70"
+  >
+    {#each keyboardLayout as row}
+      <div class="flex justify-center gap-1.5 w-full">
+        {#each row as key}
+          <div
+            class="h-12 rounded-md font-bold text-sm flex items-center justify-center transition-colors flex-shrink"
+            class:flex-1={key.length === 1}
+            class:max-w-[48px]={key.length === 1}
+            class:min-w-[64px]={key.length > 1}
+            class:bg-gray-500={getLetterStatus(key) === "default"}
+            class:bg-gray-800={getLetterStatus(key) === "absent"}
+            class:text-white={getLetterStatus(key) === "absent"}
+            class:bg-yellow-500={getLetterStatus(key) === "present"}
+            class:bg-green-500={getLetterStatus(key) === "correct"}
+          >
+            {key}
+          </div>
+        {/each}
+      </div>
+    {/each}
+  </div>
 </div>

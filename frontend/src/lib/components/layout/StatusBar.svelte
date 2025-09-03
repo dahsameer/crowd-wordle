@@ -24,7 +24,7 @@
 
 <div class="container mx-auto px-4">
   <div
-    class="bg-black/20 backdrop-blur-sm border border-white/10 rounded-xl p-4 mb-6"
+    class="bg-black/20 backdrop-blur-sm border border-white/10 rounded-xl p-3 mb-6"
   >
     <div class="flex flex-wrap items-center justify-between gap-4 text-sm">
       <div class="flex items-center gap-3">
