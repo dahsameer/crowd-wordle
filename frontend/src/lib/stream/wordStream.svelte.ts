@@ -29,7 +29,6 @@ export function addWords(newWords: string[]) {
 	const now = Date.now();
 	const wordsToAdd: IncomingWord[] = newWords.map((word, index) => {
 		let isMyword = false;
-		console.log(`myword: ${myword} word: ${word}`)
 		if (myword == word) {
 			isMyword = true;
 			myword = "";
