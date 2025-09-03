@@ -28,9 +28,9 @@ public sealed class GameEngine
         {
             if (_currentGame.GameOver)
                 return true;
-
-            var states = ProcessWord(topWord, _currentGame.SelectedWord);
-            var packedStates = PackStates(states);
+            var packedStates = ProcessWordExperimental(topWord, _currentGame.SelectedWord);
+            //var states = ProcessWord(topWord, _currentGame.SelectedWord);
+            //var packedStates = PackStates(states);
             var playedWord = new PlayedWord
             {
                 Packed = topWord,
@@ -93,17 +93,6 @@ public sealed class GameEngine
     private static bool IsAllCorrect(uint packed) => packed == AllCorrectPacked;
 
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint PackStates(ReadOnlySpan<BlockState> states)
-    {
-        uint packed = 0;
-        for (int i = 0; i < states.Length; i++)
-        {
-            packed |= (uint)states[i] << i * 2;
-        }
-        return packed;
-    }
-
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static BlockState[] ProcessWord(uint guess, uint target)
     {
@@ -150,56 +139,45 @@ public sealed class GameEngine
         return result;
     }
 
-    private static uint ProcessWordExperimental(uint guess, uint target)
+    public static uint ProcessWordExperimental(uint guess, uint target)
     {
-        // Extract using bit manipulation - completely unrolled
-        uint t0 = target >> 20;
-        uint t1 = (target >> 15) & 0x1F;
-        uint t2 = (target >> 10) & 0x1F;
-        uint t3 = (target >> 5) & 0x1F;
-        uint t4 = target & 0x1F;
+        // Extract letters
+        uint g0 = guess & 0x1F, g1 = (guess >> 5) & 0x1F, g2 = (guess >> 10) & 0x1F;
+        uint g3 = (guess >> 15) & 0x1F, g4 = (guess >> 20) & 0x1F;
 
-        uint g0 = guess >> 20;
-        uint g1 = (guess >> 15) & 0x1F;
-        uint g2 = (guess >> 10) & 0x1F;
-        uint g3 = (guess >> 5) & 0x1F;
-        uint g4 = guess & 0x1F;
+        uint t0 = target & 0x1F, t1 = (target >> 5) & 0x1F, t2 = (target >> 10) & 0x1F;
+        uint t3 = (target >> 15) & 0x1F, t4 = (target >> 20) & 0x1F;
 
-        // create bitmask in single operation
-        uint remaining = (1u << (int)t0) | (1u << (int)t1) | (1u << (int)t2) | (1u << (int)t3) | (1u << (int)t4);
+        // Exact matches
+        uint eq0 = (uint)-(g0 == t0 ? 1 : 0);
+        uint eq1 = (uint)-(g1 == t1 ? 1 : 0);
+        uint eq2 = (uint)-(g2 == t2 ? 1 : 0);
+        uint eq3 = (uint)-(g3 == t3 ? 1 : 0);
+        uint eq4 = (uint)-(g4 == t4 ? 1 : 0);
 
-        // branchless equality using XOR and bit manipulation
-        uint eq0 = (uint)(-((g0 ^ t0) == 0 ? 1 : 0));
-        uint eq1 = (uint)(-((g1 ^ t1) == 0 ? 1 : 0));
-        uint eq2 = (uint)(-((g2 ^ t2) == 0 ? 1 : 0));
-        uint eq3 = (uint)(-((g3 ^ t3) == 0 ? 1 : 0));
-        uint eq4 = (uint)(-((g4 ^ t4) == 0 ? 1 : 0));
+        // Build frequency table (3 bits per letter)
+        ulong freq = 0;
+        freq += 1UL << ((int)t0 * 3);
+        freq += 1UL << ((int)t1 * 3);
+        freq += 1UL << ((int)t2 * 3);
+        freq += 1UL << ((int)t3 * 3);
+        freq += 1UL << ((int)t4 * 3);
 
-        // bit clearing using conditional AND
-        uint mask0 = (1u << (int)g0);
-        uint mask1 = (1u << (int)g1);
-        uint mask2 = (1u << (int)g2);
-        uint mask3 = (1u << (int)g3);
-        uint mask4 = (1u << (int)g4);
+        // Subtract exact matches
+        freq -= (eq0 & 1UL) << ((int)g0 * 3);
+        freq -= (eq1 & 1UL) << ((int)g1 * 3);
+        freq -= (eq2 & 1UL) << ((int)g2 * 3);
+        freq -= (eq3 & 1UL) << ((int)g3 * 3);
+        freq -= (eq4 & 1UL) << ((int)g4 * 3);
 
-        remaining &= ~(mask0 & eq0);
-        remaining &= ~(mask1 & eq1);
-        remaining &= ~(mask2 & eq2);
-        remaining &= ~(mask3 & eq3);
-        remaining &= ~(mask4 & eq4);
+        // Inline saturating subtraction & presence checks
+        ulong c0 = (freq >> ((int)g0 * 3)) & 7UL; uint pr0 = (uint)-((eq0 == 0 && c0 > 0) ? 1 : 0); freq -= ((c0 > 0 ? 1UL : 0UL) << ((int)g0 * 3));
+        ulong c1 = (freq >> ((int)g1 * 3)) & 7UL; uint pr1 = (uint)-((eq1 == 0 && c1 > 0) ? 1 : 0); freq -= ((c1 > 0 ? 1UL : 0UL) << ((int)g1 * 3));
+        ulong c2 = (freq >> ((int)g2 * 3)) & 7UL; uint pr2 = (uint)-((eq2 == 0 && c2 > 0) ? 1 : 0); freq -= ((c2 > 0 ? 1UL : 0UL) << ((int)g2 * 3));
+        ulong c3 = (freq >> ((int)g3 * 3)) & 7UL; uint pr3 = (uint)-((eq3 == 0 && c3 > 0) ? 1 : 0); freq -= ((c3 > 0 ? 1UL : 0UL) << ((int)g3 * 3));
+        ulong c4 = (freq >> ((int)g4 * 3)) & 7UL; uint pr4 = (uint)-((eq4 == 0 && c4 > 0) ? 1 : 0); freq -= ((c4 > 0 ? 1UL : 0UL) << ((int)g4 * 3));
 
-        // present detection
-        uint pr0 = (uint)(-((eq0 == 0) & ((remaining & mask0) != 0) ? 1 : 0));
-        remaining &= ~(mask0 & pr0);
-        uint pr1 = (uint)(-((eq1 == 0) & ((remaining & mask1) != 0) ? 1 : 0));
-        remaining &= ~(mask1 & pr1);
-        uint pr2 = (uint)(-((eq2 == 0) & ((remaining & mask2) != 0) ? 1 : 0));
-        remaining &= ~(mask2 & pr2);
-        uint pr3 = (uint)(-((eq3 == 0) & ((remaining & mask3) != 0) ? 1 : 0));
-        remaining &= ~(mask3 & pr3);
-        uint pr4 = (uint)(-((eq4 == 0) & ((remaining & mask4) != 0) ? 1 : 0));
-
-        // Final bit packing - let compiler optimize shifts
+        // Pack into 2-bit per letter result
         return ((eq0 << 1) & 2u) | (pr0 & 1u) |
                (((eq1 << 1) & 2u) | (pr1 & 1u)) << 2 |
                (((eq2 << 1) & 2u) | (pr2 & 1u)) << 4 |

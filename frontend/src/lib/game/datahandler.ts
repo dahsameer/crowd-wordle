@@ -71,6 +71,7 @@ function handleNewGame() {
 		TimeToNextGame: 0,
 		TopWords: []
 	});
+	setLiveData({ ...getLiveData(), myVote: null });
 }
 
 function handleResponse(response: RequestResponseType) {

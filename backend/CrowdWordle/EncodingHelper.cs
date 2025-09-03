@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace CrowdWordle;
@@ -38,6 +37,17 @@ public static class EncodingHelper
             result[i] = value;
         }
         return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint PackStates(ReadOnlySpan<BlockState> states)
+    {
+        uint packed = 0;
+        for (int i = 0; i < states.Length; i++)
+        {
+            packed |= (uint)states[i] << i * 2;
+        }
+        return packed;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -139,7 +149,7 @@ public static class EncodingHelper
 
         if (!game.GameOver)
             writer.WriteBits(game.Round, 3);
-        if(game.GameOver)
+        if (game.GameOver)
         {
             writer.WriteBits(CalculateTimeRemaining(nextEvent), 4);
         }
