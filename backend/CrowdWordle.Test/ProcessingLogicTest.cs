@@ -145,6 +145,7 @@ public class ProcessingLogicTest
     [InlineData("drain", "brain", "acccc")]
     [InlineData("spike", "skimp", "cpcpa")]
     [InlineData("trend", "tends", "cappp")]
+    [InlineData("pence", "penny", "cccaa")]
     public void TestExperimentalLogic(string guessString, string targetString, string statesString)
     {
         uint guess = EncodingHelper.PackFromString(guessString);
